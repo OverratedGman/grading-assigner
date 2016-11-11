@@ -9,6 +9,7 @@ import time
 import pytz
 from dateutil import parser
 from datetime import datetime, timedelta
+from twython import Twython
 
 utc = pytz.UTC
 
@@ -27,6 +28,14 @@ ASSIGNED_URL = '{}/me/submissions/assigned.json'.format(BASE_URL)
 QUEUE_POSITION_URL = '{}/submission_requests/{}/waits.json'
 REVIEW_URL = 'https://review.udacity.com/#!/submissions/{sid}'
 REQUESTS_PER_SECOND = 1 # Please leave this alone.
+
+#twitter notification setup
+APP_KEY = 'APP_KEY'
+APP_SECRET = 'APP_SECRET'
+
+twitter = Twython(APP_KEY, APP_SECRET, oauth_version=2)
+ACCESS_TOKEN = twitter.obtain_access_token()
+twitter = Twython(APP_KEY, access_token=ACCESS_TOKEN)
 
 logging.basicConfig(format='|%(asctime)s| %(message)s')
 logger = logging.getLogger(__name__)
@@ -55,16 +64,25 @@ def alert_for_assignment(current_request, headers):
         logger.info("View it here: " + REVIEW_URL.format(sid=current_request['submission_id']))
         logger.info("=================================================")
         logger.info("Continuing to poll...")
+        twitter.update_status(status='New review recieved!')
+        
         return None
     return current_request
 
 def wait_for_assign_eligible():
     while True:
+        iteration=0
         assigned_resp = requests.get(ASSIGNED_COUNT_URL, headers=headers)
         if assigned_resp.status_code == 404 or assigned_resp.json()['assigned_count'] < 2:
+            iteration=0
             break
         else:
             logger.info('Waiting for assigned submissions < 2')
+            iteration=+1
+            if iteration%30==0:
+                twitter.update_status(status='2 reviews waiting to be reviewed!')
+            
+            
         # Wait 30 seconds before checking to see if < 2 open submissions
         # that is, waiting until a create submission request will be permitted
         time.sleep(30.0)
@@ -137,6 +155,7 @@ def request_reviews(token):
                 # expire (1 hour)
                 logger.info('0-0-0-0-0-0-0-0-0-0- refreshing request 0-0-0-0-0-0-0')
                 current_request = refresh_request(current_request)
+                twitter.update_status(status=queue_response)
             else:
                 logger.info('Checking for new assignments')
                 # If an assignment has been made since status was last checked,
