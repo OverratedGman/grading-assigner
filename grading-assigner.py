@@ -30,12 +30,14 @@ REVIEW_URL = 'https://review.udacity.com/#!/submissions/{sid}'
 REQUESTS_PER_SECOND = 1 # Please leave this alone.
 
 #twitter notification setup
-APP_KEY = 'APP_KEY'
-APP_SECRET = 'APP_SECRET'
+app_key = ""
+app_secret = ""
+oauth_token = ""
+oauth_token_secret = ""
 
-twitter = Twython(APP_KEY, APP_SECRET, oauth_version=2)
-ACCESS_TOKEN = twitter.obtain_access_token()
-twitter = Twython(APP_KEY, access_token=ACCESS_TOKEN)
+#Prepare your twitter, you will need it for everything
+twitter = Twython(app_key, app_secret, oauth_token, oauth_token_secret)
+#finished setting up connection
 
 logging.basicConfig(format='|%(asctime)s| %(message)s')
 logger = logging.getLogger(__name__)
@@ -100,23 +102,14 @@ def refresh_request(current_request):
 
 def fetch_certified_pairs():
     logger.info("Requesting certifications...")
-    me_resp = requests.get(ME_URL, headers=headers)
-    me_resp.raise_for_status()
-    languages = me_resp.json()['application']['languages'] or ['en-us']
-
-    certs_resp = requests.get(CERTS_URL, headers=headers)
-    certs_resp.raise_for_status()
-
-    certs = certs_resp.json()
-    project_ids = [cert['project']['id'] for cert in certs if cert['status'] == 'certified']
-
-    logger.info("Found certifications for project IDs: %s in languages %s",
-                str(project_ids), str(languages))
-    logger.info("Polling for new submissions...")
-
+    project_ids=['133']
+    languages=['en']
+    
     return [{'project_id': project_id, 'language': lang} for project_id in project_ids for lang in languages]
 
+
 def request_reviews(token):
+    twitter.update_status(status='Udacity-EC2 Instance running!')
     global headers
     headers = {'Authorization': token, 'Content-Length': '0'}
 
