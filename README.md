@@ -50,3 +50,6 @@ $ ./grading-assigner.py
 ```
 
 Press ctrl-c to quit.
+
+**To get this code working**
+You need to add your own twitter credentials: app key, app secret, etc...
