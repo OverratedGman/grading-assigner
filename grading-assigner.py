@@ -46,14 +46,6 @@ logger.setLevel(logging.INFO)
 headers = None
 
 def signal_handler(signal, frame):
-    if headers:
-        logger.info('Cleaning up active request')
-        me_resp = requests.get(ME_REQUEST_URL, headers=headers)
-        if me_resp.status_code == 200 and len(me_resp.json()) > 0:
-            logger.info(DELETE_URL_TMPL.format(BASE_URL, me_resp.json()[0]['id']))
-            del_resp = requests.delete(DELETE_URL_TMPL.format(BASE_URL, me_resp.json()[0]['id']),
-                                       headers=headers)
-            logger.info(del_resp)
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -66,7 +58,7 @@ def alert_for_assignment(current_request, headers):
         logger.info("View it here: " + REVIEW_URL.format(sid=current_request['submission_id']))
         logger.info("=================================================")
         logger.info("Continuing to poll...")
-        twitter.update_status(status='New review recieved!')
+        twitter.update_status(status='New review recieved! {}'.format(utcnow))
         
         return None
     return current_request
@@ -109,7 +101,8 @@ def fetch_certified_pairs():
 
 
 def request_reviews(token):
-    twitter.update_status(status='Udacity-EC2 Instance running!')
+    utcnow = datetime.utcnow()
+    twitter.update_status(status='Udacity-EC2 Instance running!{}'.format(utcnow))
     global headers
     headers = {'Authorization': token, 'Content-Length': '0'}
 
@@ -148,7 +141,7 @@ def request_reviews(token):
                 # expire (1 hour)
                 logger.info('0-0-0-0-0-0-0-0-0-0- refreshing request 0-0-0-0-0-0-0')
                 current_request = refresh_request(current_request)
-                twitter.update_status(status=queue_response)
+                twitter.update_status(status='{}{}'.format(queue_response,utcnow))
             else:
                 logger.info('Checking for new assignments')
                 # If an assignment has been made since status was last checked,
